@@ -1,0 +1,14 @@
+streamlit
+opencv-python
+pytesseract
+easyocr
+numpy
+requests
+googletrans==4.0.0-rc1
+google-api-python-client
+sentence-transformers
+speechrecognition
+yt-dlp
+openai-whisper
+deep-translator
+gradio
