@@ -14,6 +14,27 @@ TextToTube is an AI-powered educational tool that transforms scanned textbook co
 * Video Integration: YouTube Data API
 * Frontend: Gradio, Streamlit
 * Audio Processing: PyGame, yt-dlp, Whisper
+## 🚀 Installation
+### Clone the repository:
+```bash
+git clone https://github.com/DhruvaVinod/TextToTube.git
+cd TextToTube
+```
+ 
+### Install dependencies: 
+
+```bash
+git clone https://github.com/DhruvaVinod/TextToTube.git
+cd TextToTube
+```
+### Set up API keys:
+* Create a .env file in the project root
+* Add your API keys:
+```bash
+YOUTUBE_API_KEY=your_youtube_api_key
+GEMINI_API_KEY=your_gemini_api_key
+```
+  
 ## Screenshots 
 ## How it works 
 * Text Acquisition: Text is captured via camera scan or voice input
