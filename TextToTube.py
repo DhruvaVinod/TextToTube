@@ -78,7 +78,7 @@ def get_video(query):
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
     # Your API Key (Make sure it's enabled for YouTube Data API v3)
-    api_key = "AIzaSyDyFAYLiZ2IaAIVjZIhLUzJEeI_O9tpIWE"
+    api_key = "AIzaSyD6hKgUxy-91DW8AnaTrc7nvDHUfWazi_0"
     
     # Function to get videos from YouTube API
     def get_top_videos(query, max_results=10):
@@ -153,10 +153,13 @@ def get_video(query):
 def hear_audio(video_url, target_language):
     import os
     import yt_dlp
-    import whisper
+    from faster_whisper import WhisperModel
 
     def download_audio(video_url):
+        ffmpeg_path = "C:/ffmpeg/bin"  # Change this to your actual path
+
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'format': 'bestaudio/best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -174,9 +177,10 @@ def hear_audio(video_url, target_language):
     audio_file = download_audio(video_url)
 
     def transcribe_audio(audio_path):
-        model = whisper.load_model("base")
-        result = model.transcribe(audio_path)
-        return result["text"]
+        model = WhisperModel("base")
+        segments, _ = model.transcribe(audio_path)
+        text = " ".join([segment.text for segment in segments])
+        return text
 
     transcribed_text = transcribe_audio(audio_file)
 
