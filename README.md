@@ -26,6 +26,9 @@ cd TextToTube
 ```bash
 pip install -r requirements.txt
 ```
+### Download ffmpeg
+
+Download ffmpeg-release-essentials_build from online and add the bin folder to "C:/ffmpeg/bin" directory on local device
 
 ### Set up API keys:
 * Create a .env file in the project root
