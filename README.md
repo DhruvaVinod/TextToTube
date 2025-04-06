@@ -35,7 +35,6 @@ YOUTUBE_API_KEY=your_youtube_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
   
-## Screenshots 
 ## How it works 
 * Text Acquisition: Text is captured via camera scan or voice input
 * Content Analysis: The extracted text is analyzed using natural language processing
