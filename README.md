@@ -24,9 +24,9 @@ cd TextToTube
 ### Install dependencies: 
 
 ```bash
-git clone https://github.com/DhruvaVinod/TextToTube.git
-cd TextToTube
+pip install -r requirements.txt
 ```
+
 ### Set up API keys:
 * Create a .env file in the project root
 * Add your API keys:
