@@ -9,7 +9,7 @@ google-api-python-client
 sentence-transformers
 speechrecognition
 yt-dlp
-openai-whisper
+faster-whisper
 deep-translator
 gradio
 pygame
