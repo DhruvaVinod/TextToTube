@@ -1,3 +1,14 @@
+---
+title: TextToTube
+emoji: 🎥
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: "4.0.0"
+app_file: app.py
+pinned: false
+---
+
 # TextToTube
 ## 📖 Overview
 TextToTube is an AI-powered educational tool that transforms scanned textbook content into engaging multimedia learning experiences. It bridges the gap between traditional reading and interactive understanding by connecting textbook content with relevant YouTube videos and AI-generated summaries.
