@@ -8,7 +8,7 @@ import json
 import tempfile
 import pygame
 from gtts import gTTS
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import webbrowser
 import googleapiclient.discovery
 from sentence_transformers import SentenceTransformer
@@ -198,7 +198,6 @@ def hear_audio(video_url, target_language):
 
     summary = generate_with_gemini(transcribed_text)
 
-    from deep_translator import GoogleTranslator
     translated_summary = GoogleTranslator(source="auto", target=target_language).translate(summary)
 
     return translated_summary

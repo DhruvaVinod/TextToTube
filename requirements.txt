@@ -6,8 +6,7 @@ easyocr
 requests
 pygame
 gTTS
-googletrans==4.0.0rc1
-httpcore==0.15.0
+deep-translator
 google-api-python-client
 sentence-transformers
 SpeechRecognition
