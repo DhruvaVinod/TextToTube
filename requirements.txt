@@ -12,3 +12,4 @@ transformers == 4.35.2
 sentence-transformers
 SpeechRecognition
 gradio
+faster-whisper
