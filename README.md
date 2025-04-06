@@ -4,8 +4,8 @@ emoji: 🎥
 colorFrom: blue
 colorTo: indigo
 sdk: gradio
-sdk_version: "4.0.0"
-app_file: app.py
+sdk_version: "5.23.3"
+app_file: TextToTube.py
 pinned: false
 ---
 

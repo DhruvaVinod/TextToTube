@@ -18,25 +18,14 @@ import os
 import time
 import gradio as gr
 
-
-# Configure Tesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
 # API Keys
-YOUTUBE_API_KEY = "AIzaSyDyFAYLiZ2IaAIVjZIhLUzJEeI_O9tpIWE"
-GEMINI_API_KEY = "AIzaSyCcut0jba_NB9GIM7KIEPDPLCubpww_UP0"
-
-# Initialize Speech Recognizer
-
-recognizer = sr.Recognizer()
+YOUTUBE_API_KEY = "AIzaSyD6hKgUxy-91DW8AnaTrc7nvDHUfWazi_0"
+GEMINI_API_KEY = "AIzaSyDDwEucj4KNsnUT4m4qpt1pwnByhm6_vjM"
 
 def scan_headline():
     import cv2
     import easyocr
     import numpy as np
-
-    # Set up Tesseract path
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     
     cap = cv2.VideoCapture(0)
 
@@ -48,7 +37,7 @@ def scan_headline():
             break
 
         cv2.imwrite("captured_frame.jpg", frame)
-        print("Image captured. Check 'captured_frame1.jpg' to verify.")
+        print("Image captured. Check 'captured_frame.jpg' to verify.")
         break
 
     cap.release()
