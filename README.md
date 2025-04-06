@@ -11,7 +11,7 @@ pinned: false
 
 # TextToTube
 ## 📖 Overview
-TextToTube is an AI-powered educational tool that transforms scanned textbook content into engaging multimedia learning experiences. It bridges the gap between traditional reading and interactive understanding by connecting textbook content with relevant YouTube videos and AI-generated summaries.
+TextToTube is an AI-powered educational tool that transforms textbook content into engaging multimedia learning experiences. It bridges the gap between traditional reading and interactive understanding by connecting textbook content with relevant YouTube videos and AI-generated summaries.
 ## ✨ Features
 * Text Scanning : Capture text from textbooks or printed materials using your device camera
 * Smart Video Discovery: Find relevant YouTube videos based on scanned content
