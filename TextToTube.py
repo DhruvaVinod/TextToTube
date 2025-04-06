@@ -156,8 +156,10 @@ def hear_audio(video_url, target_language):
     from faster_whisper import WhisperModel
 
     def download_audio(video_url):
+        ffmpeg_path = "C:/ffmpeg/bin"  # Change this to your actual path
 
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'format': 'bestaudio/best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
