@@ -8,6 +8,7 @@ pygame
 gTTS
 deep-translator
 google-api-python-client
+transformers == 4.35.2
 sentence-transformers
 SpeechRecognition
 gradio
