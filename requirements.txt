@@ -1,15 +1,28 @@
-streamlit
+# Computer Vision and OCR
 opencv-python
-pytesseract
-numpy
 easyocr
+
+# Core dependencies
+numpy
 requests
-pygame
-gTTS
-deep-translator
-google-api-python-client
-transformers == 4.35.2
+
+# Machine Learning and NLP
 sentence-transformers
-SpeechRecognition
-gradio
 faster-whisper
+
+# Audio Processing and TTS
+gtts
+pygame
+
+# Translation
+deep-translator
+
+# YouTube and Video Processing
+yt-dlp
+google-api-python-client
+
+# Web Interface
+gradio
+
+# Regular expressions (usually built-in, but some systems might need it)
+regex
