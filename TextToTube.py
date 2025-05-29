@@ -65,6 +65,33 @@ def scan_headline():
         return ""
     return " ".join([res[1] for res in results])
 
+def extract_text_from_image(image_path):
+    """Extract text from uploaded image file using OCR"""
+    try:
+        # Read the image
+        image = cv2.imread(image_path)
+        if image is None:
+            return "❌ Could not read the image file. Please check the file format."
+        
+        # Convert to grayscale for better OCR results
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Initialize EasyOCR reader
+        reader = easyocr.Reader(['en'])
+        
+        # Perform OCR
+        results = reader.readtext(gray)
+        
+        if not results:
+            return "❌ No text found in the image."
+        
+        # Extract and join all detected text
+        extracted_text = " ".join([res[1] for res in results])
+        return extracted_text
+        
+    except Exception as e:
+        return f"❌ Error processing image: {str(e)}"
+
 def get_video(query):
     model = SentenceTransformer("all-MiniLM-L6-v2")
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
@@ -246,8 +273,26 @@ def get_text_for_audio(english_text, translated_text, language):
 
 # UI Functions
 def ui_scan_headline():
+    """Original webcam scanning function"""
     #return scan_headline()
     return "Computer Networks"
+
+def ui_upload_and_extract(uploaded_file):
+    """Handle uploaded file and extract text"""
+    if uploaded_file is None:
+        return "❌ No file uploaded. Please upload an image file."
+    
+    try:
+        # Get the file path from the uploaded file
+        file_path = uploaded_file.name
+        
+        # Extract text from the uploaded image
+        extracted_text = extract_text_from_image(file_path)
+        
+        return extracted_text
+        
+    except Exception as e:
+        return f"❌ Error processing uploaded file: {str(e)}"
 
 def ui_watch_video(text):
     result = get_video(text)
@@ -319,14 +364,52 @@ h1 {
     border-radius: 8px !important;
     padding: 10px 20px;
 }
+.or-divider {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #666;
+    margin: 15px 0;
+    position: relative;
+}
+.or-divider::before,
+.or-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background-color: #ccc;
+}
+.or-divider::before {
+    left: 0;
+}
+.or-divider::after {
+    right: 0;
+}
 """
 
 with gr.Blocks(css=custom_css) as demo:
     gr.Markdown("<h1>📰 Text to Learning Assistant</h1>")
 
-    with gr.Row():
-        btn_scan = gr.Button("📷 Scan Text", variant="primary")
-    output_text = gr.Textbox(label="📄 Extracted Text", interactive=False)
+    gr.Markdown("## 📷 Text Input Options")
+    
+    # Webcam scan button on top
+    btn_scan = gr.Button("📷 Scan with Webcam", variant="primary", size="lg")
+    
+    # OR divider
+    gr.HTML('<div class="or-divider">OR</div>')
+    
+    # File upload section below
+    file_upload = gr.File(
+        label="", 
+        file_types=["image"], 
+        type="filepath",
+        show_label=False
+    )
+    btn_extract = gr.Button("🔍 Extract Text from Upload", variant="secondary")
+    
+    output_text = gr.Textbox(label="📄 Extracted Text", interactive=True, lines=3)
 
     gr.Markdown("## ➡️ What would you like to do?")
 
@@ -382,6 +465,9 @@ with gr.Blocks(css=custom_css) as demo:
 
     # Button Logic
     btn_scan.click(fn=ui_scan_headline, outputs=output_text)
+    
+    # File upload logic
+    btn_extract.click(fn=ui_upload_and_extract, inputs=file_upload, outputs=output_text)
 
     btn_watch.click(fn=ui_watch_video, inputs=output_text, outputs=[video_title, video_url])
     btn_summary.click(fn=ui_summarize_video, inputs=output_text, outputs=english_summary)
