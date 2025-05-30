@@ -18,6 +18,14 @@ import gradio as gr
 import time
 from deep_translator import GoogleTranslator, exceptions as dt_exceptions
 
+from PIL import Image, ImageDraw, ImageFont
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.animation import FuncAnimation
+import io
+import base64
+import subprocess 
+
 pygame.mixer.init()
 
 # API Keys
@@ -176,7 +184,8 @@ def download_audio(video_url):
         return ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
 
 def transcribe_audio(audio_path):
-    model = WhisperModel("base")
+    model = WhisperModel("base", device="cpu", compute_type="int8")
+    #model = WhisperModel("base")
     segments, _ = model.transcribe(audio_path)
     return " ".join([segment.text for segment in segments])
 
@@ -537,6 +546,363 @@ h1 {
 }
 """
 
+def generate_video_script_with_gemini(topic_text):
+    """Generate a detailed video script with visual cues using Gemini"""
+    prompt = f"""Create a detailed educational video script for the topic: {topic_text}
+
+The script should include:
+1. An engaging introduction (30 seconds)
+2. Main content broken into 3-4 key sections (2-3 minutes each)
+3. A conclusion with key takeaways (30 seconds)
+4. Visual descriptions for each section (what should be shown on screen)
+5. Total duration should be 8-10 minutes
+
+Format the output as JSON:
+{{
+  "title": "Video Title",
+  "total_duration": "10 minutes",
+  "sections": [
+    {{
+      "section_title": "Introduction",
+      "duration": "30 seconds",
+      "script": "Spoken content here...",
+      "visual_description": "What should be shown on screen",
+      "key_points": ["point 1", "point 2"]
+    }}
+  ]
+}}
+
+Make the language simple, engaging, and educational. Include real-world examples and analogies."""
+
+    data = {"contents": [{"parts": [{"text": prompt}]}]}
+    headers = {'Content-Type': 'application/json'}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        if response.status_code == 200:
+            raw_response = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # Clean the response to extract JSON
+            json_start = raw_response.find('{')
+            json_end = raw_response.rfind('}') + 1
+            
+            if json_start != -1 and json_end != -1:
+                json_str = raw_response[json_start:json_end]
+                script_data = json.loads(json_str)
+                return script_data
+            else:
+                return {"error": "Failed to parse video script from response"}
+        else:
+            return {"error": f"API request failed with status {response.status_code}"}
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse JSON response from Gemini"}
+    except Exception as e:
+        return {"error": f"Error generating video script: {str(e)}"}
+
+def create_slide_with_opencv(text, section_title, slide_number, total_slides, width=1920, height=1080):
+    """Create a visual slide using OpenCV and PIL with enhanced graphics"""
+    try:
+        # Create PIL image with gradient background
+        img = Image.new('RGB', (width, height), color='#ffffff')
+        draw = ImageDraw.Draw(img)
+        
+        # Create gradient background
+        for y in range(height):
+            # Blue gradient from light to darker
+            r = int(240 - (y * 40 / height))
+            g = int(248 - (y * 30 / height))
+            b = int(255 - (y * 20 / height))
+            color = (max(200, r), max(220, g), max(235, b))
+            draw.line([(0, y), (width, y)], fill=color)
+        
+        # Add decorative elements
+        # Header background rectangle
+        header_height = 150
+        draw.rectangle([0, 0, width, header_height], fill='#2c3e50', outline='#34495e', width=3)
+        
+        # Add geometric shapes for visual appeal
+        # Left side decorative circles
+        circle_colors = ['#3498db', '#e74c3c', '#f39c12', '#2ecc71']
+        for i, color in enumerate(circle_colors):
+            x = 50 + (i * 60)
+            y = 50
+            draw.ellipse([x, y, x+40, y+40], fill=color)
+        
+        # Right side decorative triangles
+        for i in range(3):
+            x = width - 200 + (i * 50)
+            y = 30 + (i * 15)
+            points = [(x, y), (x+30, y), (x+15, y+25)]
+            draw.polygon(points, fill='#9b59b6')
+        
+        # Try to load fonts
+        try:
+            title_font = ImageFont.truetype("arial.ttf", 56)
+            content_font = ImageFont.truetype("arial.ttf", 32)
+            footer_font = ImageFont.truetype("arial.ttf", 28)
+            bullet_font = ImageFont.truetype("arial.ttf", 30)
+        except:
+            try:
+                # Try different font names
+                title_font = ImageFont.truetype("Arial.ttf", 56)
+                content_font = ImageFont.truetype("Arial.ttf", 32)
+                footer_font = ImageFont.truetype("Arial.ttf", 28)
+                bullet_font = ImageFont.truetype("Arial.ttf", 30)
+            except:
+                # Fallback to default fonts with larger size
+                title_font = ImageFont.load_default()
+                content_font = ImageFont.load_default()
+                footer_font = ImageFont.load_default()
+                bullet_font = ImageFont.load_default()
+        
+        # Draw title with shadow effect
+        title_y = 75
+        # Shadow
+        draw.text((width//2 + 2, title_y + 2), section_title, font=title_font, 
+                  fill='#1a252f', anchor='mt')
+        # Main title
+        draw.text((width//2, title_y), section_title, font=title_font, 
+                  fill='#ffffff', anchor='mt')
+        
+        # Content area background
+        content_bg_y = header_height + 20
+        content_bg_height = height - content_bg_y - 100
+        draw.rectangle([50, content_bg_y, width-50, content_bg_y + content_bg_height], 
+                      fill='#ffffff', outline='#bdc3c7', width=2)
+        
+        # Add subtle pattern to content area
+        for i in range(0, width-100, 100):
+            for j in range(content_bg_y, content_bg_y + content_bg_height, 100):
+                draw.ellipse([i+75, j+20, i+85, j+30], fill='#ecf0f1')
+        
+        # Process and draw content with bullet points
+        words = text.split()
+        lines = []
+        current_line = []
+        chars_per_line = 65
+        
+        # Create bullet points from sentences
+        sentences = text.split('.')
+        bullet_lines = []
+        
+        for sentence in sentences[:8]:  # Limit to 8 bullet points
+            sentence = sentence.strip()
+            if sentence and len(sentence) > 10:
+                # Word wrap long sentences
+                if len(sentence) > chars_per_line:
+                    words_in_sentence = sentence.split()
+                    wrapped_lines = []
+                    current_wrap = []
+                    
+                    for word in words_in_sentence:
+                        if len(' '.join(current_wrap + [word])) <= chars_per_line:
+                            current_wrap.append(word)
+                        else:
+                            if current_wrap:
+                                wrapped_lines.append(' '.join(current_wrap))
+                            current_wrap = [word]
+                    if current_wrap:
+                        wrapped_lines.append(' '.join(current_wrap))
+                    
+                    bullet_lines.extend(wrapped_lines)
+                else:
+                    bullet_lines.append(sentence)
+        
+        # Draw bullet points
+        content_start_y = content_bg_y + 40
+        line_height = 55
+        max_lines = 10
+        
+        for i, line in enumerate(bullet_lines[:max_lines]):
+            if line.strip():
+                y_pos = content_start_y + (i * line_height)
+                
+                # Draw bullet point
+                bullet_x = 100
+                bullet_y = y_pos + 15
+                draw.ellipse([bullet_x, bullet_y, bullet_x+12, bullet_y+12], fill='#3498db')
+                
+                # Draw text
+                text_x = bullet_x + 25
+                draw.text((text_x, y_pos), line.strip(), font=content_font, fill='#2c3e50')
+        
+        # Footer section
+        footer_y = height - 80
+        draw.rectangle([0, footer_y, width, height], fill='#34495e')
+        
+        # Slide number with style
+        footer_text = f"Slide {slide_number} of {total_slides}"
+        draw.text((width-50, footer_y+25), footer_text, font=footer_font, 
+                  fill='#ffffff', anchor='rt')
+        
+        # Add progress bar
+        progress_width = 400
+        progress_x = 50
+        progress_y = footer_y + 30
+        
+        # Progress background
+        draw.rectangle([progress_x, progress_y, progress_x + progress_width, progress_y + 8], 
+                      fill='#7f8c8d')
+        
+        # Progress fill
+        fill_width = int((slide_number / total_slides) * progress_width)
+        draw.rectangle([progress_x, progress_y, progress_x + fill_width, progress_y + 8], 
+                      fill='#3498db')
+        
+        # Add logo/branding area
+        brand_text = "AI Learning Assistant"
+        draw.text((50, footer_y+10), brand_text, font=footer_font, fill='#ecf0f1')
+        
+        # Convert PIL to OpenCV format
+        opencv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        
+        return opencv_image
+        
+    except Exception as e:
+        print(f"Error creating slide: {e}")
+        # Return a colorful fallback frame
+        fallback_img = np.zeros((height, width, 3), dtype=np.uint8)
+        
+        # Create gradient fallback
+        for y in range(height):
+            color_val = int(100 + (y * 155 / height))
+            fallback_img[y, :] = [color_val, 200, 255]
+        
+        # Add simple text overlay using OpenCV
+        cv2.putText(fallback_img, section_title, (50, 100), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
+        cv2.putText(fallback_img, f"Slide {slide_number}/{total_slides}", 
+                   (50, height-50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        
+        return fallback_img
+
+def combine_audio_video_ffmpeg(video_path, audio_path, output_path):
+    """Combine video and audio using ffmpeg subprocess"""
+    try:
+        ffmpeg_path = "C:/ffmpeg/ffmpeg-7.1.1-essentials_build/bin/ffmpeg.exe"
+        
+        # Check if custom ffmpeg exists, otherwise use system ffmpeg
+        if not os.path.exists(ffmpeg_path):
+            ffmpeg_path = "ffmpeg"
+        
+        cmd = [
+            ffmpeg_path,
+            '-i', video_path,
+            '-i', audio_path,
+            '-c:v', 'copy', #changed from 'libx264'
+            '-c:a', 'copy', #changed from 'aac'
+            '-map', '0:v:0', #added new 
+            '-map', '1:a:0', #added new 
+            #'-strict', 'experimental',
+            '-shortest',
+            '-y',  # Overwrite output file
+            output_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return True, "Video and audio combined successfully"
+        else:
+            return False, f"FFmpeg error: {result.stderr}"
+            
+    except Exception as e:
+        return False, f"Error combining audio and video: {str(e)}"
+
+def generate_educational_video_opencv(topic_text):
+    """Generate educational video using OpenCV instead of moviepy"""
+    try:
+        # Step 1: Generate script using Gemini
+        script_data = generate_video_script_with_gemini(topic_text)
+        
+        if "error" in script_data:
+            return f"❌ Error generating script: {script_data['error']}"
+        
+        # Step 2: Extract full script text for audio
+        full_script = ""
+        sections = script_data.get("sections", [])
+        
+        for section in sections:
+            full_script += section.get("script", "") + " "
+        
+        if not full_script.strip():
+            return "❌ No script content generated"
+        
+        # Step 3: Generate audio from script
+        audio_path, audio_status = generate_audio(full_script, "English")
+        
+        if not audio_path:
+            return f"❌ Audio generation failed: {audio_status}"
+        
+        # Step 4: Create video using OpenCV
+        video_width = 1920
+        video_height = 1080
+        fps = 30
+        
+        # Estimate duration (rough: 150 words per minute)
+        word_count = len(full_script.split())
+        estimated_duration = max((word_count / 150) * 60, 30)  # At least 30 seconds
+        
+        # Calculate frames and duration per slide
+        total_frames = int(estimated_duration * fps)
+        frames_per_slide = max(total_frames // len(sections), fps * 5)  # At least 5 seconds per slide
+        
+        # Create video writer
+        temp_video_path = "temp_educational_video.mp4"
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_writer = cv2.VideoWriter(temp_video_path, fourcc, fps, (video_width, video_height))
+        
+        if not video_writer.isOpened():
+            return "❌ Error: Could not create video writer"
+        
+        # Generate frames for each section
+        for i, section in enumerate(sections):
+            slide_img = create_slide_with_opencv(
+                section.get("script", "")[:800] + "...",  # Limit text length
+                section.get("section_title", f"Section {i+1}"),
+                i + 1,
+                len(sections),
+                video_width,
+                video_height
+            )
+            
+            # Write frames for this slide
+            for frame_num in range(frames_per_slide):
+                video_writer.write(slide_img)
+        
+        video_writer.release()
+        
+        # Step 5: Combine video with audio using ffmpeg
+        final_output_path = "educational_video.mp4"
+        success, message = combine_audio_video_ffmpeg(temp_video_path, audio_path, final_output_path)
+        
+        # Clean up temporary files
+        if os.path.exists(temp_video_path):
+            os.remove(temp_video_path)
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+        
+        if success:
+            return f"✅ Educational video generated successfully! Saved as: {final_output_path}"
+        else:
+            return f"❌ Error combining video and audio: {message}"
+        
+    except Exception as e:
+        return f"❌ Error generating video: {str(e)}"
+
+# UI function for the dropdown
+def ui_generate_educational_video(topic_text):
+    if not topic_text or not topic_text.strip():
+        return "❌ Please provide a topic first", None, gr.update(visible=False)
+    
+    result = generate_educational_video_opencv(topic_text)
+    
+    if "✅" in result and "educational_video.mp4" in result:
+        return result, "educational_video.mp4", gr.update(value="educational_video.mp4", visible=True)
+    else:
+        return result, None, gr.update(visible=False)
+
 with gr.Blocks(css=custom_css) as demo:
     gr.Markdown("<h1>📰 Text to Learning Assistant</h1>")
 
@@ -629,7 +995,30 @@ with gr.Blocks(css=custom_css) as demo:
         
         btn_submit_quiz = gr.Button("📝 Submit Quiz", visible=False)
         quiz_results = gr.Markdown(visible=False, label="Quiz Results")
-
+    
+    with gr.Accordion("🎬 Option 4: Generate Educational Video", open=False):
+        gr.Markdown("### Create an AI-generated educational video with slides and narration")
+    
+    with gr.Row():
+        btn_generate_video = gr.Button("🎬 Generate Educational Video", variant="primary", size="lg")
+    
+    video_generation_status = gr.Textbox(
+        label="📹 Video Generation Status", 
+        interactive=False,
+        placeholder="Click the button above to start generating your educational video..."
+    )
+    
+    # Add video player component
+    video_player = gr.Video(
+        label="📺 Generated Video Player",
+        visible=False
+    )
+    
+    video_file_display = gr.File(
+        label="📥 Download Video", 
+        visible=False,
+        file_types=[".mp4"]
+    )
     # File Downloads
     download_notes = gr.File(label="📥 Download Notes")
     download_summary = gr.File(label="📥 Download Summary")
@@ -682,6 +1071,13 @@ with gr.Blocks(css=custom_css) as demo:
     btn_pause_notes.click(fn=pause_audio, outputs=audio_status_notes)
     btn_resume_notes.click(fn=resume_audio, outputs=audio_status_notes)
     btn_stop_notes.click(fn=stop_audio, outputs=audio_status_notes)
+    
+    #for video geenration 
+    btn_generate_video.click(
+        fn=ui_generate_educational_video,
+        inputs=output_text,
+        outputs=[video_generation_status, video_file_display, video_player]
+    )
 
     # MODIFIED QUIZ BUTTON LOGIC
     def show_quiz_interface(topic, num_questions):
@@ -723,5 +1119,6 @@ with gr.Blocks(css=custom_css) as demo:
         inputs=english_summary, 
         outputs=download_summary
     )
+
 
     demo.launch(share=True)
