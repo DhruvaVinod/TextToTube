@@ -31,3 +31,5 @@ regex
 moviepy 
 pillow
 matplotlib
+
+PyPDF2==3.0.1
